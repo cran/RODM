@@ -15,6 +15,7 @@ RODM_create_dt_model(database,
                      target_column_name,
                      model_name = "DT_MODEL", 
                      auto_data_prep = TRUE,
+                     cost_matrix = NULL,
                      gini_impurity_metric = TRUE,
                      max_depth = NULL, 
                      minrec_split = NULL,
@@ -33,6 +34,7 @@ RODM_create_dt_model(database,
   \item{target_column_name}{Target column name in data_table_name.}
   \item{model_name}{ODM Model name.}
   \item{auto_data_prep}{Whether or not ODM should invoke automatic data preparation for the build.}
+  \item{cost_matrix}{User-specified cost matrix for the target classes.}
   \item{gini_impurity_metric}{Tree impurity metric: "IMPURITY_GINI" (default) or "IMPURITY_ENTROPY"}
   \item{max_depth}{Specifies the maximum depth of the tree, from root to leaf inclusive. 
                              The default is 7.}
@@ -72,7 +74,8 @@ RODM_create_dt_model(database,
  If retrieve_outputs_to_R is TRUE, returns a list with the following elements:
     \item{model.model_settings}{Table of settings used to build the model.}
     \item{model.model_attributes}{Table of attributes used to build the model.}
-    \item{dt.tree_xml}{PMML that captures the tree.}
+    \item{dt.distributions}{Target class disctributions at each tree node.}
+    \item{dt.nodes}{Node summary information.}
 }
 
 \author{
@@ -106,18 +109,16 @@ Oracle Database SQL Language Reference (Data Mining functions) 11g Release 1 (11
 \dontrun{
 DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 
-# Predicting survival in the sinking of the Titanic based on pasenger's sex, age,
-#  class, etc.
-data(titanic3, package="PASWR")          # Load survival data from Titanic
-# Select subset of attributes
-ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  
-ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No") # Rename target values
-n.rows <- length(ds[,1])                                     # Number of rows
-random_sample <- sample(1:n.rows, ceiling(n.rows/2))  # Split in train/test subsets
+# Predicting survival in the sinking of the Titanic based on pasenger's sex, age, class, etc.
+data(titanic3, package="PASWR")                                             # Load survival data from Titanic
+ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  # Select subset of attributes
+ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No")                # Rename target values
+n.rows <- length(ds[,1])                                                    # Number of rows
+random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split dataset randomly in train/test subsets
 titanic_train <- ds[random_sample,]                         # Training set
 titanic_test <-  ds[setdiff(1:n.rows, random_sample),]      # Test set
-RODM_create_dbms_table(DB, "titanic_train") # Push the training table to the RDBMS
-RODM_create_dbms_table(DB, "titanic_test")  # Push the testing table to the RDBMS
+RODM_create_dbms_table(DB, "titanic_train")   # Push the training table to the database
+RODM_create_dbms_table(DB, "titanic_test")    # Push the testing table to the database
 
 dt <- RODM_create_dt_model(database = DB,    # Create ODM DT classification model
                              data_table_name = "titanic_train", 
@@ -129,20 +130,21 @@ dt2 <- RODM_apply_model(database = DB,    # Predict test data
                          model_name = "DT_MODEL",
                          supplemental_cols = "survived")
 
-print(dt2$model.apply.results[1:10,])       # Print example of prediction results
+print(dt2$model.apply.results[1:10,])                                  # Print example of prediction results
 actual <- dt2$model.apply.results[, "SURVIVED"]                
 predicted <- dt2$model.apply.results[, "PREDICTION"]                
 probs <- as.real(as.character(dt2$model.apply.results[, "'Yes'"]))       
-table(actual, predicted, dnn = c("Actual", "Predicted"))    # Confusion matrix
+table(actual, predicted, dnn = c("Actual", "Predicted"))              # Confusion matrix
 library(verification)
-perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs)  # Compute ROC and plot
+perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs)            # Compute ROC and plot
 auc.roc <- signif(perf.auc$A, digits=3)
 auc.roc.p <- signif(perf.auc$p.value, digits=3)
-roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", 
-         xlab="False Positive Rate", ylab="True Postive Rate", 
-         main= "Titanic survival ODM DT model ROC Curve")
+roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", xlab="False Positive Rate", 
+         ylab="True Postive Rate", main= "Titanic survival ODM DT model ROC Curve")
 text(0.7, 0.4, labels= paste("AUC ROC:", signif(perf.auc$A, digits=3)))
 text(0.7, 0.3, labels= paste("p-value:", signif(perf.auc$p.value, digits=3)))
+
+dt        # look at the model details
 
 RODM_drop_model(DB, "DT_MODEL")             # Drop the model
 RODM_drop_dbms_table(DB, "titanic_train")   # Drop the database table

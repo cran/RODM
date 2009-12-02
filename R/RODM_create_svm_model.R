@@ -9,6 +9,7 @@
    model_name = "SVM_MODEL",          # ODM Model name				  
    mining_function = "classification",# Type of SVM model: "classification", "regression" or "anomaly_detection"
    auto_data_prep = TRUE,             # Setting to perform automatic data preparation
+   class_weights = NULL,              # Data frame containing target class weights
    active_learning = TRUE,            # Setting for enabling active learning
    complexity_factor = NULL,          # Setting that specifies the complexity factor for SVM.
    conv_tolerance = NULL,             # Setting that specifies tolerance for SVM.
@@ -97,7 +98,8 @@
                dimnames = list(NULL,c("SETTING_NAME", "SETTING_VALUE")))))
      }
    }
-   RODM_store_settings(database, SVM.settings.table, auto_data_prep, sql.log.file)
+   RODM_store_settings(database, SVM.settings.table, auto_data_prep, 
+                       sql.log.file, class_weights)
 
    # Create the ODM Support Vector Machine model, retrieving
    # basic details (settings and attributes) if desired

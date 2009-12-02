@@ -101,11 +101,12 @@ names(ai.vals) <- as.vector(attribute.importance[,1])
 barplot(ai.vals, main="Relative survival importance of Titanic dataset attributes",
         ylab = "Relative Importance", xlab = "Attribute", cex.names=0.7)
 
+ai        # look at the model details
+
 RODM_drop_model(DB, "TITANIC_AI_MODEL")    # Drop the model
 RODM_drop_dbms_table(DB, "db_titanic")     # Drop the database table
 
 RODM_close_dbms_connection(DB)
 }
 }
-
 \seealso{\code{\link{RODM_drop_model}}}

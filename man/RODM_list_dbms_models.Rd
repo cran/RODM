@@ -59,37 +59,34 @@ Oracle Database PL/SQL Packages and Types Reference 11g Release 1 (11.1)
 \dontrun{
 DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 
-data(titanic3, package="PASWR")              # Load survival data from Titanic
-
-# Select subset of attributes
-
-ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  
-ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No") # Rename target values
-n.rows <- length(ds[,1])                                     # Number of rows
+data(titanic3, package="PASWR")                                             # Load survival data from Titanic
+ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  # Select subset of attributes
+ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No")                # Rename target values
+n.rows <- length(ds[,1])                                                    # Number of rows
 set.seed(seed=6218945)
-random_sample <- sample(1:n.rows, ceiling(n.rows/2))  # Split in train/test subsets
+random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split dataset randomly in train/test subsets
 titanic_train <- ds[random_sample,]                         # Training set
 titanic_test <-  ds[setdiff(1:n.rows, random_sample),]      # Test set
-RODM_create_dbms_table(DB, "titanic_train")  # Push the training table to the RDBMS
-RODM_create_dbms_table(DB, "titanic_test")   # Push the testing table to the RDBMS
+RODM_create_dbms_table(DB, "titanic_train")   # Push the training table to the database
+RODM_create_dbms_table(DB, "titanic_test")    # Push the testing table to the database
 
 # Create an ODM Naive Bayes model
 nb <- RODM_create_nb_model(
    database = DB,                     # Database ODBC channel identifier
    model_name = "titanic_nb_model",   # ODM model name
-   data_table_name = "titanic_train", # (in quotes) Data frame or database table 
-                                      # containing the input dataset
-   target_column_name = "survived")   # Target column name in data_table_name
+   data_table_name = "titanic_train", # (in quotes) Data frame or database table containing the input dataset
+   target_column_name = "survived")   # Target column name in data_table_name		
 
 # Create an ODM Attribute Importance model
 ai <- RODM_create_ai_model(
    database = DB,                     # Database ODBC channel identifier
    model_name = "titanic_ai_model",   # ODM model name
-   data_table_name = "titanic_train", # (in quotes) Data frame or database table 
-                                      # containing the input dataset
-   target_column_name = "survived")   # Target column name in data_table_name
+   data_table_name = "titanic_train", # (in quotes) Data frame or database table containing the input dataset
+   target_column_name = "survived")   # Target column name in data_table_name		
+
 # List the models
 mlist <- RODM_list_dbms_models(DB)
+mlist
 
 RODM_drop_model(DB, "titanic_nb_model")
 RODM_drop_model(DB, "titanic_ai_model")
@@ -99,5 +96,4 @@ RODM_drop_dbms_table(DB, "titanic_test")
 RODM_close_dbms_connection(DB)
 }
 }
-
 

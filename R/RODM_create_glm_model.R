@@ -9,11 +9,15 @@
    model_name = "GLM_MODEL",          # ODM Model name				  
    mining_function = "classification",# Type of GLM model: "classification" or "regression"
    auto_data_prep = TRUE,             # Setting to perform automatic data preparation
+   class_weights = NULL,              # Data frame containing target class weights
+   weight_column_name = NULL,         # Column in data_table_name to weight rows differently
    conf_level = NULL,
    reference_class_name = NULL,
+   missing_value_treatment = NULL,    # Setting for specifying missing value treatment
    ridge_regression = NULL,
    ridge_value = NULL,
    vif_for_ridge = NULL,
+   diagnostics_table_name = NULL,     # Table to hold per-row diagnostics
    retrieve_outputs_to_R = TRUE,      # Flag controlling if the output results are moved to the R environment 
    leave_model_in_dbms = TRUE,        # Flag controlling if the model is deleted or left in RDBMS               
    sql.log.file = NULL)               # File where to append the log of all the SQL calls made by this function
@@ -36,6 +40,12 @@
        "ALGO_NAME", "ALGO_GENERALIZED_LINEAR_MODEL"),
        nrow = 1, ncol=2, byrow=TRUE))
    names(GLM.settings.table) <- c("SETTING_NAME", "SETTING_VALUE")
+   if (!is.null(weight_column_name)) {
+     GLM.settings.table <- rbind(GLM.settings.table, 
+         data.frame(matrix(c("ODMS_ROW_WEIGHT_COLUMN_NAME", weight_column_name),
+           nrow=1, ncol=2, byrow=TRUE,
+           dimnames = list(NULL,c("SETTING_NAME", "SETTING_VALUE")))))
+   }
    if (!is.null(conf_level)) {
      GLM.settings.table <- rbind(GLM.settings.table, 
          data.frame(matrix(c("GLMS_CONF_LEVEL", conf_level),
@@ -45,6 +55,12 @@
    if (!is.null(reference_class_name)) {
      GLM.settings.table <- rbind(GLM.settings.table, 
          data.frame(matrix(c("GLMS_REFERENCE_CLASS_NAME", reference_class_name),
+           nrow=1, ncol=2, byrow=TRUE,
+           dimnames = list(NULL,c("SETTING_NAME", "SETTING_VALUE")))))
+   }
+   if (!is.null(missing_value_treatment)) {
+     GLM.settings.table <- rbind(GLM.settings.table, 
+         data.frame(matrix(c("ODMS_MISSING_VALUE_TREATMENT", missing_value_treatment),
            nrow=1, ncol=2, byrow=TRUE,
            dimnames = list(NULL,c("SETTING_NAME", "SETTING_VALUE")))))
    }
@@ -68,7 +84,14 @@
        }
      }
    }
-   RODM_store_settings(database, GLM.settings.table, auto_data_prep, sql.log.file)
+   if (!is.null(diagnostics_table_name)) {
+     GLM.settings.table <- rbind(GLM.settings.table, 
+         data.frame(matrix(c("GLMS_DIAGNOSTICS_TABLE_NAME", diagnostics_table_name),
+           nrow=1, ncol=2, byrow=TRUE,
+           dimnames = list(NULL,c("SETTING_NAME", "SETTING_VALUE")))))
+   }
+   RODM_store_settings(database, GLM.settings.table, auto_data_prep, 
+                       sql.log.file, class_weights, TRUE)
 
    # Create the ODM Generalized Linear model, retrieving
    # basic details (settings and attributes) if desired

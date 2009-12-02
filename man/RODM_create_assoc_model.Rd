@@ -85,17 +85,14 @@ Oracle Database PL/SQL Packages and Types Reference 11g Release 1 (11.1)
 \code{\link{RODM_drop_model}}}
 
 \examples{
-
 \dontrun{
 DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 
 data(satfruit, package="PASWR")
-ards <- satfruit[,c("WH", "BA", "NAR", "COR", "SF", "VI", "PS", "ES", "AF", 
-                    "CO", "AR", "AL", "OL")]  # Select subset of attributes
+ards <- satfruit[,c("WH", "BA", "NAR", "COR", "SF", "VI", "PS", "ES", "AF", "CO", "AR", "AL", "OL")]  # Select subset of attributes
 ards[,] <- ifelse(ards[,] == 0, NA, "YES")   # make it sparse, as required by ODM
 n.rows <- length(ards[,1])           # Number of rows
-row.id <- matrix(seq(1, n.rows), nrow=n.rows, ncol=1, 
-                 dimnames= list(NULL, c("ROW_ID"))) # Row id
+row.id <- matrix(seq(1, n.rows), nrow=n.rows, ncol=1, dimnames= list(NULL, c("ROW_ID"))) # Row id
 ards <- cbind(row.id, ards)          # Add row id to dataset 
 RODM_create_dbms_table(DB, "ards")   # Push the training table to the database
 

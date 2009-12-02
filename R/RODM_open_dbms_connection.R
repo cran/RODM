@@ -57,5 +57,31 @@ pwd = "")
     sqlQuery(channel, query = query.string)
   }
 
+  # Create tables for bias settings if they do not exist yet
+  if (sqlQuery(channel, 
+        "select count(*) from user_tables where table_name = 'RODM_NUM_PRIORS'") 
+      == 0) {
+    query.string <- "CREATE GLOBAL TEMPORARY TABLE RODM_NUM_PRIORS (TARGET_VALUE NUMBER, PRIOR_PROBABILITY NUMBER) ON COMMIT PRESERVE ROWS"
+    sqlQuery(channel, query = query.string)
+  }
+  if (sqlQuery(channel, 
+        "select count(*) from user_tables where table_name = 'RODM_CAT_PRIORS'") 
+      == 0) {
+    query.string <- "CREATE GLOBAL TEMPORARY TABLE RODM_CAT_PRIORS (TARGET_VALUE VARCHAR2(4000), PRIOR_PROBABILITY NUMBER) ON COMMIT PRESERVE ROWS"
+    sqlQuery(channel, query = query.string)
+  }
+  if (sqlQuery(channel, 
+        "select count(*) from user_tables where table_name = 'RODM_NUM_COSTS'") 
+      == 0) {
+    query.string <- "CREATE GLOBAL TEMPORARY TABLE RODM_NUM_COSTS (ACTUAL_TARGET_VALUE NUMBER, PREDICTED_TARGET_VALUE NUMBER, COST NUMBER) ON COMMIT PRESERVE ROWS"
+    sqlQuery(channel, query = query.string)
+  }
+  if (sqlQuery(channel, 
+        "select count(*) from user_tables where table_name = 'RODM_CAT_COSTS'") 
+      == 0) {
+    query.string <- "CREATE GLOBAL TEMPORARY TABLE RODM_CAT_COSTS (ACTUAL_TARGET_VALUE VARCHAR2(4000), PREDICTED_TARGET_VALUE VARCHAR2(4000), COST NUMBER) ON COMMIT PRESERVE ROWS"
+    sqlQuery(channel, query = query.string)
+  }
+
   return(channel)
 } # end of RODM_open_dbms_connection

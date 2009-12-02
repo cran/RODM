@@ -49,7 +49,6 @@ Oracle Database PL/SQL Packages and Types Reference 11g Release 1 (11.1)
 \code{\link{RODM_create_svm_model}}, 
 \code{\link{RODM_create_kmeans_model}}, 
 \code{\link{RODM_create_oc_model}}, 
-\code{\link{RODM_create_nmf_model}}, 
 \code{\link{RODM_create_ai_model}}, 
 \code{\link{RODM_create_nb_model}}, 
 \code{\link{RODM_create_glm_model}}, 
@@ -64,10 +63,10 @@ db_titanic <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked"
 db_titanic[,"survived"] <- ifelse(db_titanic[,"survived"] == 1, "Yes", "No")
 RODM_create_dbms_table(DB, "db_titanic")   # Push the table to the database
 ai <- RODM_create_ai_model(
-   database = DB,                    # Database ODBC connection
-   data_table_name = "db_titanic",   # Database table containing the input dataset
-   target_column_name = "survived",  # Target column name in data_table_name
-   model_name = "TITANIC_AI_MODEL")  # Oracle Data Mining model name to create
+   database = DB,                      # Database ODBC connection
+   data_table_name = "db_titanic",     # Database table containing the input dataset
+   target_column_name = "survived",    # Target column name in data_table_name
+   model_name = "TITANIC_AI_MODEL")    # Oracle Data Mining model name to create
 
 # Drop the model that was just created
 RODM_drop_model(DB, "TITANIC_AI_MODEL")
@@ -76,5 +75,4 @@ RODM_drop_dbms_table(DB, "db_titanic")     # Drop the database table
 RODM_close_dbms_connection(DB)
 }
 }
-
 

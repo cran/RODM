@@ -64,8 +64,10 @@ DB <- RODM_open_dbms_connection(dsn="orcl11g", uid="rodm", pwd="rodm")
 # Move the titanic3 data frame to a new table in the Oracle database
 RODM_create_dbms_table(DB, "titanic3")
 
+# Now drop the table (just to clean up from this example)
+RODM_drop_dbms_table(DB, "titanic3")
+
 RODM_close_dbms_connection(DB)
 }
 }
-
 

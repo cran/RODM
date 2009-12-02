@@ -16,6 +16,7 @@ RODM_create_svm_model(database,
                       model_name = "SVM_MODEL", 
                       mining_function = "classification",
                       auto_data_prep = TRUE,
+                      class_weights = NULL,
                       active_learning = TRUE,
                       complexity_factor = NULL, 
                       conv_tolerance = NULL, 
@@ -37,6 +38,7 @@ RODM_create_svm_model(database,
   \item{model_name}{ODM Model name.}
   \item{mining_function}{Type of mining function for SVM model: "classification" (default), "regression" or "anomaly_detection".}
   \item{auto_data_prep}{Whether or not ODM should invoke automatic data preparation for the build.}
+  \item{class_weights}{User-specified weights for the target classes.}
   \item{active_learning}{Whether or not ODM should use active learning.}
   \item{complexity_factor}{Setting that specifies the complexity factor for SVM. The default is NULL.}
   \item{conv_tolerance}{Setting that specifies tolerance for SVM. The default is 0.001.}  
@@ -124,21 +126,19 @@ DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 
 # Separating three Gaussian classes in 2D
 
-X1 <- c(rnorm(200, mean = 2, sd = 1), rnorm(300, mean = 8, sd = 2), 
-        rnorm(300, mean = 5, sd = 0.6))
-Y1 <- c(rnorm(200, mean = 1, sd = 2), rnorm(300, mean = 4, sd = 1.5), 
-        rnorm(300, mean = 6, sd = 0.5))
+X1 <- c(rnorm(200, mean = 2, sd = 1), rnorm(300, mean = 8, sd = 2), rnorm(300, mean = 5, sd = 0.6))
+Y1 <- c(rnorm(200, mean = 1, sd = 2), rnorm(300, mean = 4, sd = 1.5), rnorm(300, mean = 6, sd = 0.5))
 target <- c(rep(1, 200), rep(2, 300), rep(3, 300)) 
 ds <- data.frame(cbind(X1, Y1, target)) 
-n.rows <- length(ds[,1])                              # Number of rows
+n.rows <- length(ds[,1])                                                    # Number of rows
 set.seed(seed=6218945)
-random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split in train/test subsets
+random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split dataset randomly in train/test subsets
 ds_train <- ds[random_sample,]                         # Training set
 ds_test <-  ds[setdiff(1:n.rows, random_sample),]      # Test set
 RODM_create_dbms_table(DB, "ds_train")   # Push the training table to the database
 RODM_create_dbms_table(DB, "ds_test")    # Push the testing table to the database
 
-svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM  model
+svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM classification model
                              data_table_name = "ds_train", 
                              target_column_name = "target")
 
@@ -149,12 +149,10 @@ svm2 <- RODM_apply_model(database = DB,    # Predict test data
 
 color.map <- c("blue", "green", "red")
 color <- color.map[svm2$model.apply.results[, "TARGET"]]
-plot(as.numeric(as.character(svm2$model.apply.results[, "X1"])),
-     as.numeric(as.character(svm2$model.apply.results[, "Y1"])),
+plot(svm2$model.apply.results[, "X1"],
+     svm2$model.apply.results[, "Y1"],
      pch=20, col=color, ylim=c(-2,10), xlab="X1", ylab="Y1", 
      main="Test Set")
-
-
 actual <- svm2$model.apply.results[, "TARGET"]
 predicted <- svm2$model.apply.results[, "PREDICTION"]
 for (i in 1:length(ds_test[,1])) {
@@ -163,10 +161,9 @@ for (i in 1:length(ds_test[,1])) {
            y=svm2$model.apply.results[i, "Y1"],
            col = "black", pch=20)
 }
-legend(6, 1.5, legend=c("Class 1 (correct)", "Class 2 (correct)", 
-       "Class 3 (correct)", "Error"), 
-       pch = rep(20, 4), col = c(color.map, "black"), pt.bg = c(color.map, 
-       "black"), cex = 1.20, pt.cex=1.5, bty="n")
+legend(6, 1.5, legend=c("Class 1 (correct)", "Class 2 (correct)", "Class 3 (correct)", "Error"), 
+       pch = rep(20, 4), col = c(color.map, "black"), pt.bg = c(color.map, "black"), cex = 1.20, 
+       pt.cex=1.5, bty="n")
 
 RODM_drop_model(DB, "SVM_MODEL")       # Drop the model
 RODM_drop_dbms_table(DB, "ds_train")   # Drop the database table
@@ -175,23 +172,19 @@ RODM_drop_dbms_table(DB, "ds_test")    # Drop the database table
 
 ### SVM Classification
 
-# Predicting survival in the sinking of the Titanic based on pasenger's sex, age,
-# class, etc.
+# Predicting survival in the sinking of the Titanic based on pasenger's sex, age, class, etc.
 \dontrun{
-data(titanic3, package="PASWR")            # Load survival data from Titanic
-
-# Select subset of attributes
-
-ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  
-ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No") # Rename target values
-n.rows <- length(ds[,1])                                     # Number of rows
-random_sample <- sample(1:n.rows, ceiling(n.rows/2)) # Split in train/test subsets
+data(titanic3, package="PASWR")                                             # Load survival data from Titanic
+ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  # Select subset of attributes
+ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No")                # Rename target values
+n.rows <- length(ds[,1])                                                    # Number of rows
+random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split dataset randomly in train/test subsets
 titanic_train <- ds[random_sample,]                         # Training set
 titanic_test <-  ds[setdiff(1:n.rows, random_sample),]      # Test set
-RODM_create_dbms_table(DB, "titanic_train") # Push the training table to the RDBMS
-RODM_create_dbms_table(DB, "titanic_test")  # Push the testing table to the RDBMS
+RODM_create_dbms_table(DB, "titanic_train")   # Push the training table to the database
+RODM_create_dbms_table(DB, "titanic_test")    # Push the testing table to the database
 
-svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM model
+svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM classification model
                              data_table_name = "titanic_train", 
                              target_column_name = "survived", 
                              model_name = "SVM_MODEL",
@@ -202,19 +195,17 @@ svm2 <- RODM_apply_model(database = DB,    # Predict test data
                          model_name = "SVM_MODEL",
                          supplemental_cols = "survived")
 
-print(svm2$model.apply.results[1:10,])       # Print example of prediction results
+print(svm2$model.apply.results[1:10,])                                  # Print example of prediction results
 actual <- svm2$model.apply.results[, "SURVIVED"]                
 predicted <- svm2$model.apply.results[, "PREDICTION"]                
 probs <- as.real(as.character(svm2$model.apply.results[, "'Yes'"]))       
-table(actual, predicted, dnn = c("Actual", "Predicted"))  # Confusion matrix
+table(actual, predicted, dnn = c("Actual", "Predicted"))              # Confusion matrix
 library(verification)
-perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs) # Compute ROC and plot
+perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs)            # Compute ROC and plot
 auc.roc <- signif(perf.auc$A, digits=3)
 auc.roc.p <- signif(perf.auc$p.value, digits=3)
-roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", 
-         xlab="False Positive Rate", 
-         ylab="True Postive Rate", 
-         main= "Titanic survival ODM SVM model ROC Curve")
+roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", xlab="False Positive Rate", 
+         ylab="True Postive Rate", main= "Titanic survival ODM SVM model ROC Curve")
 text(0.7, 0.4, labels= paste("AUC ROC:", signif(perf.auc$A, digits=3)))
 text(0.7, 0.3, labels= paste("p-value:", signif(perf.auc$p.value, digits=3)))
 
@@ -245,8 +236,7 @@ svm2 <- RODM_apply_model(database = DB,    # Predict training data
 plot(X1, Y1, pch=20, col="blue")
 points(x=svm2$model.apply.results[, "X1"], 
        svm2$model.apply.results[, "PREDICTION"], pch=20, col="red")
-legend(-4, -1.5, legend = c("actual", "SVM regression"), pch = c(20, 20), 
-                col = c("blue", "red"),
+legend(-4, -1.5, legend = c("actual", "SVM regression"), pch = c(20, 20), col = c("blue", "red"),
                 pt.bg =  c("blue", "red"), cex = 1.20, pt.cex=1.5, bty="n")
 
 RODM_drop_model(DB, "SVM_MODEL")       # Drop the model
@@ -261,7 +251,7 @@ Y1 <- c(rnorm(200, mean = 2, sd = 1.5), rnorm(300, mean = 8, sd = 1.5))
 ds <- data.frame(cbind(X1, Y1)) 
 RODM_create_dbms_table(DB, "ds")   # Push the table to the database
 
-svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM anomaly model
+svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM anomaly detection model
                              data_table_name = "ds", 
                              target_column_name = NULL, 
                              model_name = "SVM_MODEL",
@@ -277,9 +267,8 @@ col <- ifelse(svm2$model.apply.results[, "PREDICTION"] == 1, "green", "red")
 for (i in 1:500) points(x=svm2$model.apply.results[i, "X1"], 
                         y=svm2$model.apply.results[i, "Y1"], 
                         col = col[i], pch=20)
-legend(8, 2, legend = c("typical", "anomaly"), pch = c(20, 20), col = c("green", 
-                "red"), pt.bg =  c("green", "red"), cex = 1.20, pt.cex=1.5, 
-                bty="n")
+legend(8, 2, legend = c("typical", "anomaly"), pch = c(20, 20), col = c("green", "red"),
+                pt.bg =  c("green", "red"), cex = 1.20, pt.cex=1.5, bty="n")
 
 RODM_drop_model(DB, "SVM_MODEL")       # Drop the model
 RODM_drop_dbms_table(DB, "ds")         # Drop the database table
@@ -287,7 +276,6 @@ RODM_drop_dbms_table(DB, "ds")         # Drop the database table
 RODM_close_dbms_connection(DB)
 }
 }
-
 \author{
 Pablo Tamayo \email{pablo.tamayo@oracle.com}
 

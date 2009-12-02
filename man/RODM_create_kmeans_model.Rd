@@ -109,17 +109,14 @@ DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 ### Clustering a 2D multi-Gaussian distribution of points into clusters
 
 set.seed(seed=6218945)
-# Create and merge 5 Gaussian distributions
-X1 <- c(rnorm(100, mean = 2, sd = 1), rnorm(100, mean = 8, sd = 2), 
-        rnorm(100, mean = 5, sd = 0.6),
-        rnorm(100, mean = 4, sd = 1), rnorm(100, mean = 10, sd = 1)) 
-Y1 <- c(rnorm(100, mean = 1, sd = 2), rnorm(100, mean = 4, sd = 1.5), 
-        rnorm(100, mean = 6, sd = 0.5),
+X1 <- c(rnorm(100, mean = 2, sd = 1), rnorm(100, mean = 8, sd = 2), rnorm(100, mean = 5, sd = 0.6),
+        rnorm(100, mean = 4, sd = 1), rnorm(100, mean = 10, sd = 1)) # Create and merge 5 Gaussian distributions
+Y1 <- c(rnorm(100, mean = 1, sd = 2), rnorm(100, mean = 4, sd = 1.5), rnorm(100, mean = 6, sd = 0.5),
         rnorm(100, mean = 3, sd = 0.2), rnorm(100, mean = 2, sd = 1))
 ds <- data.frame(cbind(X1, Y1)) 
-n.rows <- length(ds[,1])                             # Number of rows
+n.rows <- length(ds[,1])                                                    # Number of rows
 row.id <- matrix(seq(1, n.rows), nrow=n.rows, ncol=1, dimnames= list(NULL, c("ROW_ID"))) # Row id
-ds <- cbind(row.id, ds)                              # Add row id to dataset 
+ds <- cbind(row.id, ds)                                                     # Add row id to dataset 
 RODM_create_dbms_table(DB, "ds")   
 
 km <- RODM_create_kmeans_model(
@@ -141,17 +138,16 @@ c.numbers <- unique(as.numeric(clu))
 c.assign <- match(clu, c.numbers)
 color.map <- c("blue", "green", "red", "orange", "purple")
 color <- color.map[c.assign]
-nf <- layout(matrix(c(1, 2), 1, 2, byrow=T), widths = c(1, 1), heights = 1, 
-             respect = FALSE)
+nf <- layout(matrix(c(1, 2), 1, 2, byrow=T), widths = c(1, 1), heights = 1, respect = FALSE)
 plot(x1a, y1a, pch=20, col=1, xlab="X1", ylab="Y1", main="Original Data Points")
-plot(x1a, y1a, pch=20, type = "n", xlab="X1", ylab="Y1", 
-     main="After kmeans clustering")
+plot(x1a, y1a, pch=20, type = "n", xlab="X1", ylab="Y1", main="After kmeans clustering")
 for (i in 1:n.rows) {
    points(x1a[i], y1a[i], col= color[i], pch=20)
 }   
-legend(5, -0.5, legend=c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4",
-        "Cluster 5"), pch = rep(20, 5), col = color.map, pt.bg = color.map, 
-        cex = 0.8, pt.cex=1, bty="n")
+legend(5, -0.5, legend=c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"), pch = rep(20, 5), 
+       col = color.map, pt.bg = color.map, cex = 0.8, pt.cex=1, bty="n")
+
+km        # look at the model details and cluster assignments
 
 RODM_drop_model(DB, "KM_MODEL")   # Drop the model
 RODM_drop_dbms_table(DB, "ds")    # Drop the database table
@@ -159,6 +155,5 @@ RODM_drop_dbms_table(DB, "ds")    # Drop the database table
 RODM_close_dbms_connection(DB)
 }
 }
-
 \keyword{cluster}
 

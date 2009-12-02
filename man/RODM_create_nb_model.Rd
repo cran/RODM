@@ -15,6 +15,7 @@ RODM_create_nb_model(database,
                      target_column_name, 
                      model_name = "NB_MODEL", 
                      auto_data_prep = TRUE,
+                     class_priors = NULL,
                      retrieve_outputs_to_R = TRUE, 
                      leave_model_in_dbms = TRUE, 
                      sql.log.file = NULL)
@@ -27,6 +28,7 @@ RODM_create_nb_model(database,
   \item{target_column_name}{Target column name in data_table_name.}
   \item{model_name}{ODM Model name.}
   \item{auto_data_prep}{Whether or not ODM should invoke automatic data preparation for the build.}
+  \item{class_priors}{User-specified priors for the target classes.}
   \item{retrieve_outputs_to_R}{Flag controlling if the output results are moved to the R environment.}
   \item{leave_model_in_dbms}{Flag controlling if the model is deleted or left in RDBMS.}
   \item{sql.log.file}{File where to append the log of all the SQL calls made by this function.} 
@@ -76,64 +78,68 @@ Oracle Database SQL Language Reference (Data Mining functions) 11g Release 1 (11
 }
 
 \examples{
-# Predicting survival in the sinking of the Titanic based on pasenger's sex, age, 
-# class, etc.
+# Predicting survival in the sinking of the Titanic based on pasenger's sex, age, class, etc.
 \dontrun{
 DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 
-data(titanic3, package="PASWR")             # Load survival data from Titanic
-# Select subset of attributes
-ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  
-ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No") # Rename target values
-n.rows <- length(ds[,1])                                     # Number of rows
+data(titanic3, package="PASWR")                                             # Load survival data from Titanic
+ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  # Select subset of attributes
+ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No")                # Rename target values
+n.rows <- length(ds[,1])                                                    # Number of rows
 set.seed(seed=6218945)
-random_sample <- sample(1:n.rows, ceiling(n.rows/2))  # Split in train/test subsets
+random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split dataset randomly in train/test subsets
 titanic_train <- ds[random_sample,]                         # Training set
 titanic_test <-  ds[setdiff(1:n.rows, random_sample),]      # Test set
 
-RODM_create_dbms_table(DB, "titanic_train") # Push the training table to the RDBMS
-RODM_create_dbms_table(DB, "titanic_test")  # Push the testing table to the RDBMS
+RODM_create_dbms_table(DB, "titanic_train")   # Push the training table to the database
+RODM_create_dbms_table(DB, "titanic_test")    # Push the testing table to the database
+
+# If the target distribution does not reflect the actual distribution due
+# to specialized sampling, specify priors for the model
+priors <- data.frame(
+           target_value = c("Yes", "No"),
+           prior_probability = c(0.1, 0.9))
 
 # Create an ODM Naive Bayes model
 nb <- RODM_create_nb_model(
    database = DB,                     # Database ODBC channel identifier
    model_name = "titanic_nb_model",   # ODM model name
-   data_table_name = "titanic_train", # (in quotes) Data frame or database 
-                                      # table containing the input dataset
-   target_column_name = "survived")   # Target column name in data_table_name
+   data_table_name = "titanic_train", # (in quotes) Data frame or database table containing the input dataset
+   class_priors = priors,             # user-specified priors
+   target_column_name = "survived")   # Target column name in data_table_name		
 
 # Predict test data using the Naive Bayes model
 nb2 <- RODM_apply_model(
    database = DB,                    # Database ODBC channel identifier
    data_table_name = "titanic_test", # Database table containing the input dataset
    model_name = "titanic_nb_model",  # ODM model name
-   supplemental_cols = "survived")   # Carry the target column to the output 
+   supplemental_cols = "survived")   # Carry the target column to the output for analysis
 
 # Compute contingency matrix, performance statistics and ROC curve
-print(nb2$model.apply.results[1:10,])        # Print example of prediction results
+print(nb2$model.apply.results[1:10,])                                  # Print example of prediction results
 actual <- nb2$model.apply.results[, "SURVIVED"]                
 predicted <- nb2$model.apply.results[, "PREDICTION"]                
 probs <- as.real(as.character(nb2$model.apply.results[, "'Yes'"]))       
-table(actual, predicted, dnn = c("Actual", "Predicted")) # Confusion matrix
+table(actual, predicted, dnn = c("Actual", "Predicted"))              # Confusion matrix
 
 library(verification)
-perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs) # Compute ROC and plot
+perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs)            # Compute ROC and plot
 auc.roc <- signif(perf.auc$A, digits=3)
 auc.roc.p <- signif(perf.auc$p.value, digits=3)
-roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", 
-         xlab="False Positive Rate", 
+roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", xlab="False Positive Rate", 
          ylab="True Postive Rate", main= "Titanic survival ODM NB model ROC Curve")
 text(0.7, 0.4, labels= paste("AUC ROC:", signif(perf.auc$A, digits=3)))
 text(0.7, 0.3, labels= paste("p-value:", signif(perf.auc$p.value, digits=3)))
 
+nb        # look at the model details
+
 RODM_drop_model(DB, "titanic_nb_model")     # Drop the model
-RODM_drop_dbms_table(DB, "titanic_train") # Drop the training table in the RDBMS
-RODM_drop_dbms_table(DB, "titanic_test")  # Drop the testing table in the RDBMS
+RODM_drop_dbms_table(DB, "titanic_train")   # Drop the training table in the database
+RODM_drop_dbms_table(DB, "titanic_test")    # Drop the testing table in the database
 
 RODM_close_dbms_connection(DB)
 }
 }
-
 \seealso{
 \code{\link{RODM_apply_model}},
 \code{\link{RODM_drop_model}}}

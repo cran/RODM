@@ -70,4 +70,3 @@ RODM_close_dbms_connection(DB)
 }
 }
 
-

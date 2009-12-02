@@ -30,10 +30,6 @@
      setop <- "CLUSTER_SET"
      predcol <- "CLUSTER_ID"
      valcol <- "PROBABILITY"
-   } else if (func == 'FEATURE_EXTRACTION') {
-     setop <- "FEATURE_SET"
-     predcol <- "FEATURE_ID"
-     valcol <- "VALUE"
    }
 
    # Apply ODM model
@@ -69,7 +65,6 @@
            "  FROM ", data_table_name, ") T, table(T.resset) S) ",
            " PIVOT (max(rodmp2) for rodmp1 in (", pivotlist, ")) ", sep="");
      if (!is.null(sql.log.file)) write(query.string, file = sql.log.file, append = TRUE, ncolumns = 1000)
-
      apply.results <- sqlQuery(database, query = query.string)
   }
 

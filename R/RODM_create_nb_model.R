@@ -8,6 +8,7 @@
    target_column_name,                # Target column name in data_table_name					
    model_name = "NB_MODEL",           # ODM Model name
    auto_data_prep = TRUE,             # Setting to perform automatic data preparation
+   class_priors = NULL,               # Data frame containing target class priors
    retrieve_outputs_to_R = TRUE,      # Flag controlling if the output results are moved to the R environment 
    leave_model_in_dbms = TRUE,        # Flag controlling if the model is deleted or left in RDBMS               
    sql.log.file = NULL)               # File where to append the log of all the SQL calls made by this function
@@ -20,7 +21,8 @@
        "ALGO_NAME", "ALGO_NAIVE_BAYES"),
        nrow = 1, ncol=2, byrow=TRUE))
    names(NB.settings.table) <- c("SETTING_NAME", "SETTING_VALUE")
-   RODM_store_settings(database, NB.settings.table, auto_data_prep, sql.log.file)
+   RODM_store_settings(database, NB.settings.table, auto_data_prep, 
+                       sql.log.file, class_priors)
 
    # Create the ODM Naive Bayes classification model, retrieving
    # basic details (settings and attributes) if desired

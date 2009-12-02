@@ -12,7 +12,9 @@ This function stores model build settings in the the database table RODM_SETTING
 RODM_store_settings(database, 
                     rodmset, 
                     auto_data_prep, 
-                    sql.log.file = NULL)
+                    sql.log.file = NULL,
+                    bias_frame = NULL,
+                    bias_weights = FALSE)
 }
 
 \arguments{
@@ -20,6 +22,8 @@ RODM_store_settings(database,
   \item{rodmset}{Data frame containing the settings to be used for building a model.}
   \item{auto_data_prep}{Whether or not ODM should invoke automatic data preparation for the build.}
   \item{sql.log.file}{File to append the log of all the SQL calls made by this function.}
+  \item{bias_frame}{Data frame containint bias information (priors/costs/weights).}
+  \item{bias_weights}{Priors or Weights for 2-column bias frame.}
 }
 
 \details{

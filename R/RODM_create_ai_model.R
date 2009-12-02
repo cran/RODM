@@ -16,7 +16,12 @@
               date(), "---"), file = sql.log.file, append = TRUE, ncolumns = 1000)
 
    # Store settings in the RDBMS RODM settings table
-   RODM_store_settings(database, NULL, auto_data_prep, sql.log.file)
+   AI.settings.table <- data.frame(matrix(c(
+       "ALGO_NAME", "ALGO_AI_MDL"),
+       nrow = 1, ncol=2, byrow=TRUE))
+   names(AI.settings.table) <- c("SETTING_NAME", "SETTING_VALUE")
+   RODM_store_settings(database, AI.settings.table, auto_data_prep, 
+                       sql.log.file)
 
    # Create the ODM Attribute Importance model, retrieving
    # basic details (settings and attributes) if desired

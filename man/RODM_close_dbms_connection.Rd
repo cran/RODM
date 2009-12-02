@@ -43,6 +43,7 @@ Oracle Data Mining Administrator's Guide 11g Release 1 (11.1)
 # have been created in a fashion similar to:
 # grant create session, create table, create view, create mining model, 
 #       unlimited tablespace to rodm identified by rodm;
+
 \dontrun{
 DB <- RODM_open_dbms_connection(dsn="orcl11g", uid="rodm", pwd="rodm")
 
@@ -50,5 +51,4 @@ DB <- RODM_open_dbms_connection(dsn="orcl11g", uid="rodm", pwd="rodm")
 RODM_close_dbms_connection(DB)
 }
 }
-
 

@@ -28,7 +28,7 @@ environment.
 \tabular{ll}{
 Package: \tab RODM\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
+Version: \tab 1.0-2\cr
 Date: \tab 2010-05-01\cr
 License: \tab LGPL\cr
 }
@@ -81,7 +81,6 @@ RODM_create_dt_model\cr
 RODM_create_glm_model\cr
 RODM_create_kmeans_model\cr
 RODM_create_nb_model\cr
-RODM_create_nmf_model\cr
 RODM_create_oc_model\cr
 RODM_create_svm_model\cr
 
@@ -132,14 +131,11 @@ The list of accessible ODM models can be retrieved, and individual models can
 be dropped.
 Models (other than those used for Attribute Importance and Associations) can
 be applied to new data in the database.  Regression models will produce the
-expected value given the input variables.  NMF models will produce the full
-set of feature values for each input case (as well as a column which contains
-the identity of the feature with the highest value for each case).
-Classification models will produce the probability distribution across target
-classes for each case, as well as a column indicating the winning class.
-Clustering models will produce the probability distribution across clusters
-for each case, as well as a column indicating the most likely cluster
-assignment.
+expected value given the input variables.  Classification models will produce 
+the probability distribution across target classes for each case, as well as 
+a column indicating the winning class. Clustering models will produce the 
+probability distribution across clusters for each case, as well as a column 
+indicating the most likely cluster assignment.
 In all cases, additional columns from the test/apply dataset can be included
 in the output via the supplemental_cols parameter.  It is necessary to provide
 some information here if there is a desire to link the results back to the

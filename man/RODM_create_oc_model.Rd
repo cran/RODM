@@ -99,11 +99,10 @@ Ari Mozes \email{ari.mozes@oracle.com}
 }
 
 \references{
-B.L. Milenova and M.M. Campos, Clustering Large Databases with Numeric and Nominal Values Using 
-Orthogonal Projection, Proceeding of the 29th VLDB Conference, Berlin, Germany (2003). 
+B.L. Milenova and M.M. Campos, Clustering Large Databases with Numeric and Nominal Values Using Orthogonal Projection, Proceeding of the 29th VLDB Conference, Berlin, Germany (2003). 
 
 Oracle9i O-Cluster: Scalable Clustering of Large High Dimensional Data Sets
-\url{http://www.oracle.com/technology/products/bi/odm/pdf/o_cluster_algorithm.pdf}
+http://www.oracle.com/technology/products/bi/odm/pdf/o_cluster_algorithm.pdf
 
 Oracle Data Mining Concepts 11g Release 1 (11.1)
 \url{http://download.oracle.com/docs/cd/B28359_01/datamine.111/b28129/toc.htm}
@@ -132,18 +131,14 @@ DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 ### Clustering a 2D multi-Gaussian distribution of points into clusters
 
 set.seed(seed=6218945)
-# Create and merge 5 Gaussian distributions
-X1 <- c(rnorm(100, mean = 2, sd = 1), rnorm(100, mean = 8, sd = 2), 
-        rnorm(100, mean = 5, sd = 0.6),
-        rnorm(100, mean = 4, sd = 1), rnorm(100, mean = 10, sd = 1)) 
-Y1 <- c(rnorm(100, mean = 1, sd = 2), rnorm(100, mean = 4, sd = 1.5), 
-        rnorm(100, mean = 6, sd = 0.5),
+X1 <- c(rnorm(100, mean = 2, sd = 1), rnorm(100, mean = 8, sd = 2), rnorm(100, mean = 5, sd = 0.6),
+        rnorm(100, mean = 4, sd = 1), rnorm(100, mean = 10, sd = 1)) # Create and merge 5 Gaussian distributions
+Y1 <- c(rnorm(100, mean = 1, sd = 2), rnorm(100, mean = 4, sd = 1.5), rnorm(100, mean = 6, sd = 0.5),
         rnorm(100, mean = 3, sd = 0.2), rnorm(100, mean = 2, sd = 1))
 ds <- data.frame(cbind(X1, Y1)) 
-n.rows <- length(ds[,1])                          # Number of rows
-row.id <- matrix(seq(1, n.rows), nrow=n.rows, ncol=1, dimnames= 
-                 list(NULL, c("ROW_ID"))) # Row id
-ds <- cbind(row.id, ds)                           # Add row id to dataset 
+n.rows <- length(ds[,1])                                                    # Number of rows
+row.id <- matrix(seq(1, n.rows), nrow=n.rows, ncol=1, dimnames= list(NULL, c("ROW_ID"))) # Row id
+ds <- cbind(row.id, ds)                                                     # Add row id to dataset 
 RODM_create_dbms_table(DB, "ds")   
 
 oc <- RODM_create_oc_model(
@@ -165,8 +160,7 @@ c.numbers <- unique(as.numeric(clu))
 c.assign <- match(clu, c.numbers)
 color.map <- c("blue", "green", "red")
 color <- color.map[c.assign]
-nf <- layout(matrix(c(1, 2), 1, 2, byrow=T), widths = c(1, 1), heights = 1,
-             respect = FALSE)
+nf <- layout(matrix(c(1, 2), 1, 2, byrow=T), widths = c(1, 1), heights = 1, respect = FALSE)
 plot(x1a, y1a, pch=20, col=1, xlab="X1", ylab="Y1", main="Original Data Points")
 plot(x1a, y1a, pch=20, type = "n", xlab="X1", ylab="Y1", main="After OC clustering")
 for (i in 1:n.rows) {
@@ -175,11 +169,12 @@ for (i in 1:n.rows) {
 legend(5, -0.5, legend=c("Cluster 1", "Cluster 2", "Cluster 3"), pch = rep(20, 3), 
        col = color.map, pt.bg = color.map, cex = 0.8, pt.cex=1, bty="n")
 
+oc        # look at the model details and cluster assignments
+
 RODM_drop_model(DB, "OC_MODEL")   # Drop the database table
 RODM_drop_dbms_table(DB, "ds")    # Drop the database table
 
 RODM_close_dbms_connection(DB)
 }
 }
-
 \keyword{cluster}

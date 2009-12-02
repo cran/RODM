@@ -79,27 +79,25 @@ Ari Mozes \email{ari.mozes@oracle.com}
 }
 
 \examples{
+
 \dontrun{
 DB <- RODM_open_dbms_connection(dsn="orcl11g", uid= "rodm", pwd = "rodm")
 
 ### Classification
 
-# Predicting survival in the sinking of the Titanic based on pasenger's sex, age, 
-# class, etc.
+# Predicting survival in the sinking of the Titanic based on pasenger's sex, age, class, etc.
 
-data(titanic3, package="PASWR")                # Load survival data from Titanic
 
-# Select subset of attributes
-
-ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  
-ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No") # Rename target values
-n.rows <- length(ds[,1])                                     # Number of rows
-random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split in train/test subsets
+data(titanic3, package="PASWR")                                             # Load survival data from Titanic
+ds <- titanic3[,c("pclass", "survived", "sex", "age", "fare", "embarked")]  # Select subset of attributes
+ds[,"survived"] <- ifelse(ds[,"survived"] == 1, "Yes", "No")                # Rename target values
+n.rows <- length(ds[,1])                                                    # Number of rows
+random_sample <- sample(1:n.rows, ceiling(n.rows/2))   # Split dataset randomly in train/test subsets
 titanic_train <- ds[random_sample,]                         # Training set
 titanic_test <-  ds[setdiff(1:n.rows, random_sample),]      # Test set
-RODM_create_dbms_table(DB, "titanic_train")  # Push the training table to the RDBMS
-RODM_create_dbms_table(DB, "titanic_test")  # Push the testing table to the RDBMS
-svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM model
+RODM_create_dbms_table(DB, "titanic_train")   # Push the training table to the database
+RODM_create_dbms_table(DB, "titanic_test")    # Push the testing table to the database
+svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM classification model
                              data_table_name = "titanic_train", 
                              target_column_name = "survived", 
                              model_name = "SVM_MODEL",
@@ -111,29 +109,29 @@ svm2 <- RODM_apply_model(database = DB,    # Predict test data
                          model_name = "SVM_MODEL",
                          supplemental_cols = "survived")
 
-print(svm2$model.apply.results[1:10,])      # Print example of prediction results
+print(svm2$model.apply.results[1:10,])                                # Print example of prediction results
 actual <- svm2$model.apply.results[, "SURVIVED"]                
 predicted <- svm2$model.apply.results[, "PREDICTION"]                
 probs <- as.real(as.character(svm2$model.apply.results[, "'Yes'"]))       
-table(actual, predicted, dnn = c("Actual", "Predicted"))   # Confusion matrix
+table(actual, predicted, dnn = c("Actual", "Predicted"))              # Confusion matrix
 library(verification)
-perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs)  # Compute ROC and plot
+perf.auc <- roc.area(ifelse(actual == "Yes", 1, 0), probs)            # Compute ROC and plot
 auc.roc <- signif(perf.auc$A, digits=3)
 auc.roc.p <- signif(perf.auc$p.value, digits=3)
-roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", 
-        xlab="False Positive Rate", 
+roc.plot(ifelse(actual == "Yes", 1, 0), probs, binormal=T, plot="both", xlab="False Positive Rate", 
          ylab="True Postive Rate", main= "Titanic survival ODM SVM model ROC Curve")
 text(0.7, 0.4, labels= paste("AUC ROC:", signif(perf.auc$A, digits=3)))
 text(0.7, 0.3, labels= paste("p-value:", signif(perf.auc$p.value, digits=3)))
 
 RODM_drop_model(DB, "SVM_MODEL")            # Drop the model
-RODM_drop_dbms_table(DB, "titanic_train")  # Drop the training table in the RDBMS
-RODM_drop_dbms_table(DB, "titanic_test")   # Drop the testing table in the RDBMS
+RODM_drop_dbms_table(DB, "titanic_train")   # Drop the training table in the database
+RODM_drop_dbms_table(DB, "titanic_test")    # Drop the testing table in the database
 }
 
 ### Regression
 
 # Aproximating a one-dimensional non-linear function
+
 \dontrun{
 X1 <- 10 * runif(500) - 5 
 Y1 <- X1*cos(X1) + 2*runif(500) 
@@ -152,24 +150,24 @@ svm2 <- RODM_apply_model(database = DB,    # Predict training data
                          supplemental_cols = "X1")
 
 plot(X1, Y1, pch=20, col="blue")
-points(x=svm2$model.apply.results[, "X1"], 
-       svm2$model.apply.results[, "PREDICTION"], pch=20, col="red")
-legend(-4, -1.5, legend = c("actual", "SVM regression"), pch = c(20, 20), 
-       col = c("blue", "red"), pt.bg =  c("blue", "red"), cex = 1.20, 
-       pt.cex=1.5, bty="n")
+points(x=svm2$model.apply.results[, "X1"], svm2$model.apply.results[, "PREDICTION"], pch=20, col="red")
+legend(-4, -1.5, legend = c("actual", "SVM regression"), pch = c(20, 20), col = c("blue", "red"),
+                pt.bg =  c("blue", "red"), cex = 1.20, pt.cex=1.5, bty="n")
 
 RODM_drop_model(DB, "SVM_MODEL")            # Drop the model
 RODM_drop_dbms_table(DB, "ds")              # Drop the database table
 }
+
 ### Anomaly detection
 
 # Finding outliers in a 2D-dimensional discrete distribution of points
+
 \dontrun{
 X1 <- c(rnorm(200, mean = 2, sd = 1), rnorm(300, mean = 8, sd = 2))
 Y1 <- c(rnorm(200, mean = 2, sd = 1.5), rnorm(300, mean = 8, sd = 1.5))
 ds <- data.frame(cbind(X1, Y1)) 
 RODM_create_dbms_table(DB, "ds")   # Push the table to the database
-svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM anomaly model
+svm <- RODM_create_svm_model(database = DB,    # Create ODM SVM anomaly detection model
                              data_table_name = "ds", 
                              target_column_name = NULL, 
                              model_name = "SVM_MODEL",
@@ -186,9 +184,8 @@ col <- ifelse(svm2$model.apply.results[, "PREDICTION"] == 1, "green", "red")
 for (i in 1:500) points(x=svm2$model.apply.results[i, "X1"], 
                         y=svm2$model.apply.results[i, "Y1"], 
                         col = col[i], pch=20)
-legend(8, 2, legend = c("typical", "anomaly"), pch = c(20, 20), 
-      col = c("green", "red"), pt.bg =  c("green", "red"), cex = 1.20, 
-      pt.cex=1.5, bty="n")
+legend(8, 2, legend = c("typical", "anomaly"), pch = c(20, 20), col = c("green", "red"),
+                pt.bg =  c("green", "red"), cex = 1.20, pt.cex=1.5, bty="n")
 
 RODM_drop_model(DB, "SVM_MODEL")            # Drop the model
 RODM_drop_dbms_table(DB, "ds")    # Drop the database table
@@ -197,20 +194,17 @@ RODM_drop_dbms_table(DB, "ds")    # Drop the database table
 ### Clustering 
 
 # Clustering a 2D multi-Gaussian distribution of points into clusters
+
 \dontrun{
 set.seed(seed=6218945)
-# Create and merge 5 Gaussian distributions
-X1 <- c(rnorm(100, mean = 2, sd = 1), rnorm(100, mean = 8, sd = 2), 
-        rnorm(100, mean = 5, sd = 0.6),
-        rnorm(100, mean = 4, sd = 1), rnorm(100, mean = 10, sd = 1)) 
-Y1 <- c(rnorm(100, mean = 1, sd = 2), rnorm(100, mean = 4, sd = 1.5), 
-       rnorm(100, mean = 6, sd = 0.5),
-       rnorm(100, mean = 3, sd = 0.2), rnorm(100, mean = 2, sd = 1))
+X1 <- c(rnorm(100, mean = 2, sd = 1), rnorm(100, mean = 8, sd = 2), rnorm(100, mean = 5, sd = 0.6),
+        rnorm(100, mean = 4, sd = 1), rnorm(100, mean = 10, sd = 1)) # Create and merge 5 Gaussian distributions
+Y1 <- c(rnorm(100, mean = 1, sd = 2), rnorm(100, mean = 4, sd = 1.5), rnorm(100, mean = 6, sd = 0.5),
+        rnorm(100, mean = 3, sd = 0.2), rnorm(100, mean = 2, sd = 1))
 ds <- data.frame(cbind(X1, Y1)) 
-n.rows <- length(ds[,1])                              # Number of rows
-row.id <- matrix(seq(1, n.rows), nrow=n.rows, ncol=1, dimnames= 
-                 list(NULL, c("ROW_ID"))) # Row id
-ds <- cbind(row.id, ds)                               # Add row id to dataset 
+n.rows <- length(ds[,1])                                                    # Number of rows
+row.id <- matrix(seq(1, n.rows), nrow=n.rows, ncol=1, dimnames= list(NULL, c("ROW_ID"))) # Row id
+ds <- cbind(row.id, ds)                                                     # Add row id to dataset 
 RODM_create_dbms_table(DB, "ds")   
 km <- RODM_create_kmeans_model(
    database = DB,                  # database ODBC channel identifier
@@ -232,17 +226,14 @@ c.numbers <- unique(as.numeric(clu))
 c.assign <- match(clu, c.numbers)
 color.map <- c("blue", "green", "red", "orange", "purple")
 color <- color.map[c.assign]
-nf <- layout(matrix(c(1, 2), 1, 2, byrow=T), widths = c(1, 1), heights = 1, 
-             respect = FALSE)
+nf <- layout(matrix(c(1, 2), 1, 2, byrow=T), widths = c(1, 1), heights = 1, respect = FALSE)
 plot(x1a, y1a, pch=20, col=1, xlab="X1", ylab="Y1", main="Original Data Points")
-plot(x1a, y1a, pch=20, type = "n", xlab="X1", ylab="Y1", 
-      main="After kmeans clustering")
+plot(x1a, y1a, pch=20, type = "n", xlab="X1", ylab="Y1", main="After kmeans clustering")
 for (i in 1:n.rows) {
    points(x1a[i], y1a[i], col= color[i], pch=20)
 }   
-legend(5, -0.5, legend=c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", 
-        "Cluster 5"), pch = rep(20, 5), col = color.map, pt.bg = color.map, 
-        cex = 0.8, pt.cex=1, bty="n")
+legend(5, -0.5, legend=c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4", "Cluster 5"), pch = rep(20, 5), 
+       col = color.map, pt.bg = color.map, cex = 0.8, pt.cex=1, bty="n")
 
 RODM_drop_model(DB, "KM_MODEL")         # Drop the model
 RODM_drop_dbms_table(DB, "ds")          # Drop the database table
@@ -251,7 +242,6 @@ RODM_drop_dbms_table(DB, "ds")          # Drop the database table
 RODM_close_dbms_connection(DB)
 }
 }
-
 
 \references{
 Oracle Data Mining Concepts 11g Release 1 (11.1)
@@ -274,7 +264,6 @@ Oracle Database SQL Language Reference (Data Mining functions) 11g Release 1 (11
 \code{\link{RODM_create_svm_model}}, 
 \code{\link{RODM_create_kmeans_model}}, 
 \code{\link{RODM_create_oc_model}}, 
-\code{\link{RODM_create_nmf_model}}, 
 \code{\link{RODM_create_nb_model}}, 
 \code{\link{RODM_create_glm_model}}, 
 \code{\link{RODM_create_dt_model}}}
