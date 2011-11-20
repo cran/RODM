@@ -1,6 +1,6 @@
 Package: RODM
-Version: 1.0-2
-Date: 2009-12-02
+Version: 1.1
+Date: 2011-11-20
 Title: R interface to Oracle Data Mining
 Author: Pablo Tamayo <pablo.tamayo@oracle.com> and Ari Mozes
         <ari.mozes@oracle.com>
@@ -28,8 +28,8 @@ Description: This package implements an interface to Oracle Data Mining
         of data mining models inside the database environment. For more
         information consult the entry for "Oracle Data Mining" in
         Wikipedia (en.wikipedia.org).
-License: GPL (>= 2)
+License: LGPL (>= 2)
 URL: http://www.r-project.org
-Packaged: 2010-06-08 04:44:08 UTC; Tamayo
+Packaged: 2012-10-29 08:57:32 UTC; ripley
 Repository: CRAN
-Date/Publication: 2010-06-08 07:34:29
+Date/Publication: 2012-10-29 08:57:32
